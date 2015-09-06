@@ -16,7 +16,7 @@ import (
 func GetConfessionToken(w http.ResponseWriter, r *http.Request) {
 	res := Token{uuid()}
 	// save token
-	err := collection.Insert(&res);
+	err := tokens.Insert(&res);
 	if err != nil {
 		panic(err)
 	} else {
@@ -26,13 +26,14 @@ func GetConfessionToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func Confess(w http.ResponseWriter, r *http.Request) {
-	vars       := mux.Vars(r)
-	token      := vars["token"]
-	result     := Token{}
-	confession := Confession{}
+	vars          := mux.Vars(r)
+	token         := vars["token"]
+	tokenRes      := TokenRes{}
+	confession    := Confession{}
 	confessionRes := ConfessionRes{}
+	confessions   := db.C("confessions")
 
-	err := collection.Find(bson.M{"token": token}).One(&result)
+	err := tokens.Find(bson.M{"token": token}).One(&tokenRes)
 
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -49,13 +50,18 @@ func Confess(w http.ResponseWriter, r *http.Request) {
 	    if err := json.Unmarshal(body, &confession); err != nil {
 	    	panic(err)
 	    }
-	    count, err := collection2.Find(nil).Count()
+	    count, err := confessions.Find(nil).Count()
 	    randn := rand.Intn(count)
 	    fmt.Println(count)
 	    fmt.Println(randn)
-	    collection2.Insert(confession)
-	    collection2.Find(nil).Skip(randn).One(&confessionRes)
-	    collection2.RemoveId(confessionRes.Id)
+	    confessions.Insert(confession)
+	    confessions.Find(nil).Skip(randn).One(&confessionRes)
+
+	    // remove access token and response confession
+	    confessions.RemoveId(confessionRes.Id)
+	    tokens.RemoveId(tokenRes.Id)
+
+	    // send response
 		json.NewEncoder(w).Encode(confessionRes)
 	}
 
@@ -65,11 +71,16 @@ type Token struct {
 	Token string `json:"token"`
 }
 
+type TokenRes struct {
+	Id    bson.ObjectId `bson:"_id", json:"_id"`
+	Token string        `json:"token"`
+}
+
 type Confession struct {
 	Confession string `json:"confession"`
 }
 
 type ConfessionRes struct {
-	Id bson.ObjectId `bson:"_id", json:"_id"`
-	Confession string `json:"confession"`
+	Id         bson.ObjectId `bson:"_id", json:"_id"`
+	Confession string        `json:"confession"`
 }
