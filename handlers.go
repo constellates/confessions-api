@@ -9,12 +9,16 @@ import (
     "io"
 	"math/rand"
 	"fmt"
+	"time"
 
 	"github.com/gorilla/mux"
 )
 
 func GetConfessionToken(w http.ResponseWriter, r *http.Request) {
-	res := Token{uuid()}
+	res := Token{
+		shortId(4),
+		time.Now(),
+	}
 	// save token
 	err := tokens.Insert(&res);
 	if err != nil {
@@ -22,6 +26,7 @@ func GetConfessionToken(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Printf("Saved access token")
 	}
+    w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(res)
 }
 
@@ -54,21 +59,24 @@ func Confess(w http.ResponseWriter, r *http.Request) {
 	    randn := rand.Intn(count)
 	    fmt.Println(count)
 	    fmt.Println(randn)
-	    confessions.Insert(confession)
 	    confessions.Find(nil).Skip(randn).One(&confessionRes)
 
 	    // remove access token and response confession
 	    confessions.RemoveId(confessionRes.Id)
 	    tokens.RemoveId(tokenRes.Id)
 
+	    confessions.Insert(confession)
+
 	    // send response
+	    w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		json.NewEncoder(w).Encode(confessionRes)
 	}
 
 }
 
 type Token struct {
-	Token string `json:"token"`
+	Token   string `json:"token"`
+	Created time.Time
 }
 
 type TokenRes struct {
