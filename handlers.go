@@ -17,6 +17,7 @@ import (
 func GetConfessionToken(w http.ResponseWriter, r *http.Request) {
 	res := Token{
 		shortId(4),
+		shortId(4),
 		time.Now(),
 	}
 	// save token
@@ -75,6 +76,7 @@ func Confess(w http.ResponseWriter, r *http.Request) {
 }
 
 type Token struct {
+	Id      bson.ObjectId `bson:"_id", json:"_id"`
 	Token   string `json:"token"`
 	Created time.Time
 }
