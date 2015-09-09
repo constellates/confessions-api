@@ -1,20 +1,23 @@
 package main
 
 import (
-	"os"
 	"math/rand"
 	"time"
 )
-
-var Random *os.File
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-const characters = "abcdefghijklmnopqrstuvwxyz0123456789"
-
+/**
+ * Short Id
+ *
+ * Takes an integer n and returns a
+ * random alpha-numeric string of
+ * length n.
+ */
 func shortId(n int) string {
+	const characters = "abcdefghijklmnopqrstuvwxyz0123456789"
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = characters[rand.Intn(len(characters))]

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
     "gopkg.in/mgo.v2/bson"
-    "log"
     "io/ioutil"
     "io"
 	"math/rand"
@@ -14,19 +13,42 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetConfessionToken(w http.ResponseWriter, r *http.Request) {
-	res := Token{
-		shortId(4),
-		shortId(4),
+func CreateToken() Token {
+	// generate new token
+	id := shortId(4)
+	token := Token{
+		id,
 		time.Now(),
 	}
+
+	// ensure token id doesn't exist
+	err := tokens.Find(bson.M{"_id": id}).One(&token)
+	if err == nil {
+		token = CreateToken()
+		return token
+	} else {
+		return token
+	}
+}
+
+func GetConfessionToken(w http.ResponseWriter, r *http.Request) {
+
+	res := CreateToken()
+
+	// check if token exists and create a new one
+	err := tokens.Find(bson.M{"_id": res.Id}).One(&res)
+	if err == nil {
+		res.Id = shortId(4)
+		fmt.Println(res.Id)
+	}
+
 	// save token
-	err := tokens.Insert(&res);
+	err = tokens.Insert(&res);
 	if err != nil {
 		panic(err)
-	} else {
-		log.Printf("Saved access token")
 	}
+
+	// respond
     w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(res)
 }
@@ -39,7 +61,7 @@ func Confess(w http.ResponseWriter, r *http.Request) {
 	confessionRes := ConfessionRes{}
 	confessions   := db.C("confessions")
 
-	err := tokens.Find(bson.M{"token": token}).One(&tokenRes)
+	err := tokens.Find(bson.M{"_id": token}).One(&tokenRes)
 
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -76,8 +98,7 @@ func Confess(w http.ResponseWriter, r *http.Request) {
 }
 
 type Token struct {
-	Id      bson.ObjectId `bson:"_id", json:"_id"`
-	Token   string `json:"token"`
+	Id      string `bson:"_id", json:"token"`
 	Created time.Time
 }
 
