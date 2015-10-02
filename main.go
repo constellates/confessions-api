@@ -4,14 +4,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/rs/cors"
 	"gopkg.in/mgo.v2"
-    "github.com/rs/cors"
 )
 
 var (
 	session *mgo.Session
 	tokens  *mgo.Collection
-	db 	    *mgo.Database
+	db      *mgo.Database
 )
 
 func main() {
