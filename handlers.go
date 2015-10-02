@@ -13,6 +13,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type Token struct {
+	Id      string `bson:"_id", json:"token"`
+	Created time.Time
+}
+
+type TokenRes struct {
+	Id    bson.ObjectId `bson:"_id", json:"_id"`
+	Token string        `json:"token"`
+}
+
+type Confession struct {
+	Confession string `json:"confession"`
+}
+
+type ConfessionRes struct {
+	Id         bson.ObjectId `bson:"_id", json:"_id"`
+	Confession string        `json:"confession"`
+}
+
 func CreateToken() Token {
 	// generate new token
 	id := shortId(4)
@@ -35,15 +54,8 @@ func GetConfessionToken(w http.ResponseWriter, r *http.Request) {
 
 	res := CreateToken()
 
-	// check if token exists and create a new one
-	err := tokens.Find(bson.M{"_id": res.Id}).One(&res)
-	if err == nil {
-		res.Id = shortId(4)
-		fmt.Println(res.Id)
-	}
-
 	// save token
-	err = tokens.Insert(&res);
+	err := tokens.Insert(&res);
 	if err != nil {
 		panic(err)
 	}
@@ -95,23 +107,4 @@ func Confess(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(confessionRes)
 	}
 
-}
-
-type Token struct {
-	Id      string `bson:"_id", json:"token"`
-	Created time.Time
-}
-
-type TokenRes struct {
-	Id    bson.ObjectId `bson:"_id", json:"_id"`
-	Token string        `json:"token"`
-}
-
-type Confession struct {
-	Confession string `json:"confession"`
-}
-
-type ConfessionRes struct {
-	Id         bson.ObjectId `bson:"_id", json:"_id"`
-	Confession string        `json:"confession"`
 }
